@@ -1,50 +1,98 @@
-# Welcome to your Expo app 👋
+# ColorAssist
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Descrição
 
-## Get started
+O **ColorAssist** é um aplicativo mobile desenvolvido em **React Native** com **Expo Go**. O objetivo do sistema é permitir o cadastro e a organização de peças de roupa, com apoio de um recurso de análise de cor por imagem.
 
-1. Install dependencies
+O aplicativo permite que o usuário faça cadastro, login, cadastre peças com foto, visualize a lista de peças salvas, edite informações e exclua registros.
 
-   ```bash
-   npm install
-   ```
+## Problema
 
-2. Start the app
+Algumas pessoas possuem dificuldade para identificar cores de roupas ou organizar suas peças. Essa dificuldade pode ser maior em casos de daltonismo ou insegurança na combinação de cores.
 
-   ```bash
-   npx expo start
-   ```
+Dessa forma, o ColorAssist busca oferecer uma solução simples para registrar peças de roupa e auxiliar na identificação da cor predominante a partir de uma imagem.
 
-In the output, you'll find options to open the app in a
+## Objetivo
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Desenvolver um aplicativo completo com banco de dados persistente, interface de interação com o usuário, login/logout e operações CRUD, utilizando React Native e Expo Go.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Funcionalidades
 
-## Get a fresh project
+* Cadastro de usuário;
+* Login e logout;
+* Cadastro de peças de roupa;
+* Listagem das peças cadastradas;
+* Edição de peças;
+* Exclusão de peças;
+* Upload de imagem da peça;
+* Análise da cor predominante por imagem.
 
-When you're ready, run:
+## Tecnologias Utilizadas
+
+* React Native;
+* Expo Go;
+* Expo Router;
+* TypeScript;
+* SQLite com `expo-sqlite`;
+* Expo Image Picker;
+* Python;
+* OpenCV.
+
+## Banco de Dados
+
+O aplicativo utiliza banco de dados local com **SQLite**, garantindo que os dados permaneçam salvos mesmo após o fechamento do aplicativo.
+
+As principais informações armazenadas são:
+
+* Usuários: nome, e-mail e senha;
+* Peças: nome, tipo, cor e imagem.
+
+## Inteligência Artificial
+
+O projeto utiliza um backend em Python com OpenCV para realizar a análise da imagem enviada pelo usuário. A partir da foto da peça, o sistema identifica a cor predominante e retorna essa informação para o aplicativo.
+
+## Como Executar
+
+### Aplicativo
+
+Na pasta principal do projeto:
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Depois, abra o projeto no celular usando o **Expo Go**.
 
-## Learn more
+### Backend
 
-To learn more about developing your project with Expo, look at the following resources:
+Na pasta `backend`:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+pip install -r requirements.txt
+python server.py
+```
 
-## Join the community
+O celular e o computador precisam estar conectados à mesma rede Wi-Fi. O IP do backend deve estar configurado no arquivo:
 
-Join our community of developers creating universal apps.
+```text
+src/services/api.ts
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Resultados Obtidos
+
+O projeto conseguiu atender aos principais requisitos solicitados no trabalho final. Foram implementados banco de dados persistente, interface de interação com o usuário, login/logout e operações CRUD.
+
+Além disso, foi incluído um recurso de análise de imagem, utilizando Python e OpenCV, para identificar a cor predominante das peças cadastradas.
+
+Durante o desenvolvimento, a principal dificuldade foi integrar o aplicativo mobile ao backend, pois foi necessário configurar corretamente o IP da máquina para permitir a comunicação com o celular.
+
+## Requisitos Atendidos
+
+* Banco de dados persistente;
+* Interface com botões, inputs e listas;
+* React Native com Expo Go;
+* Login e logout;
+* CRUD completo;
+* Uso de imagem;
+* Recurso de análise de cor com Inteligência Artificial/Processamento de Imagem.

@@ -2,8 +2,16 @@ import { router } from 'expo-router';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import ScreenScroll from '@/src/components/ScreenScroll';
+import { useSessao } from '@/src/contexts/SessaoContext';
 
 export default function HomeAppScreen() {
+  const { sair } = useSessao();
+
+  function handleSair() {
+    sair();
+    router.replace('/');
+  }
+
   return (
     <ScreenScroll>
       <View style={styles.header}>
@@ -43,7 +51,7 @@ export default function HomeAppScreen() {
 
         <TouchableOpacity
           style={styles.botaoSair}
-          onPress={() => router.replace('/')}
+          onPress={handleSair}
         >
           <Text style={styles.textoSair}>Sair</Text>
         </TouchableOpacity>

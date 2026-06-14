@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
+import { useSessao } from '@/src/contexts/SessaoContext';
 import { buscarPecaPorId, editarPeca } from '@/src/database/database';
 import ScreenScroll from '@/src/components/ScreenScroll';
 
@@ -14,31 +15,38 @@ type Peca = {
 
 export default function EditarPecaScreen() {
   const { id } = useLocalSearchParams();
+  const { usuarioLogado } = useSessao();
 
   const [nome, setNome] = useState('');
   const [tipo, setTipo] = useState('');
   const [imagemUri, setImagemUri] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !usuarioLogado) return;
 
-    const peca = buscarPecaPorId(Number(id)) as Peca | null;
+    const peca = buscarPecaPorId(Number(id), usuarioLogado.id) as Peca | null;
 
     if (peca) {
       setNome(peca.nome);
       setTipo(peca.tipo);
       setImagemUri(peca.imagem_uri);
     }
-  }, [id]);
+  }, [id, usuarioLogado]);
 
   function handleSalvar() {
+    if (!usuarioLogado) {
+      Alert.alert('Erro', 'FaÃ§a login novamente para editar a peÃ§a.');
+      router.replace('/login');
+      return;
+    }
+
     if (!nome || !tipo) {
       Alert.alert('Atenção', 'Preencha o nome e o tipo da peça.');
       return;
     }
 
     try {
-      editarPeca(Number(id), nome, tipo);
+      editarPeca(Number(id), usuarioLogado.id, nome, tipo);
 
       Alert.alert('Sucesso', 'Peça editada com sucesso!');
 

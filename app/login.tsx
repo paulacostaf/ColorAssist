@@ -1,10 +1,12 @@
 import { buscarUsuarioPorEmailSenha } from '@/src/database/database';
 import ScreenScroll from '@/src/components/ScreenScroll';
+import { useSessao } from '@/src/contexts/SessaoContext';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function LoginScreen() {
+  const { entrar } = useSessao();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
 
@@ -21,9 +23,11 @@ export default function LoginScreen() {
       return;
     }
 
+    entrar(usuario);
+
     Alert.alert('Sucesso', 'Login realizado com sucesso!');
 
-    router.push('/home');
+    router.replace('/home');
   }
 
   return (

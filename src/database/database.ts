@@ -2,6 +2,12 @@ import * as SQLite from 'expo-sqlite';
 
 const db = SQLite.openDatabaseSync('colorassist.db');
 
+export type Usuario = {
+  id: number;
+  nome: string;
+  email: string;
+};
+
 export function initDatabase() {
   db.execSync(`
     CREATE TABLE IF NOT EXISTS usuarios (
@@ -39,8 +45,8 @@ export function cadastrarUsuario(nome: string, email: string, senha: string) {
 }
 
 export function buscarUsuarioPorEmailSenha(email: string, senha: string) {
-  const usuario = db.getFirstSync(
-    'SELECT * FROM usuarios WHERE email = ? AND senha = ?',
+  const usuario = db.getFirstSync<Usuario>(
+    'SELECT id, nome, email FROM usuarios WHERE email = ? AND senha = ?',
     [email, senha]
   );
 
@@ -80,38 +86,48 @@ export function cadastrarPeca(
   }
 }
 
-export function listarPecas() {
-  const pecas = db.getAllSync('SELECT * FROM pecas ORDER BY id DESC');
+export function listarPecas(usuarioId: number) {
+  const pecas = db.getAllSync(
+    'SELECT * FROM pecas WHERE usuario_id = ? ORDER BY id DESC',
+    [usuarioId]
+  );
 
   return pecas;
 }
 
-export function excluirPeca(id: number) {
-  const statement = db.prepareSync('DELETE FROM pecas WHERE id = ?');
+export function excluirPeca(id: number, usuarioId: number) {
+  const statement = db.prepareSync(
+    'DELETE FROM pecas WHERE id = ? AND usuario_id = ?'
+  );
 
   try {
-    statement.executeSync([id]);
+    statement.executeSync([id, usuarioId]);
   } finally {
     statement.finalizeSync();
   }
 }
 
-export function buscarPecaPorId(id: number) {
+export function buscarPecaPorId(id: number, usuarioId: number) {
   const peca = db.getFirstSync(
-    'SELECT * FROM pecas WHERE id = ?',
-    [id]
+    'SELECT * FROM pecas WHERE id = ? AND usuario_id = ?',
+    [id, usuarioId]
   );
 
   return peca;
 }
 
-export function editarPeca(id: number, nome: string, tipo: string) {
+export function editarPeca(
+  id: number,
+  usuarioId: number,
+  nome: string,
+  tipo: string
+) {
   const statement = db.prepareSync(
-    'UPDATE pecas SET nome = ?, tipo = ? WHERE id = ?'
+    'UPDATE pecas SET nome = ?, tipo = ? WHERE id = ? AND usuario_id = ?'
   );
 
   try {
-    statement.executeSync([nome, tipo, id]);
+    statement.executeSync([nome, tipo, id, usuarioId]);
   } finally {
     statement.finalizeSync();
   }

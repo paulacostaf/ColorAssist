@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { useSessao } from '@/src/contexts/SessaoContext';
 import { excluirPeca, listarPecas } from '@/src/database/database';
 
 type Peca = {
@@ -14,18 +15,20 @@ type Peca = {
 };
 
 export default function MinhasPecasScreen() {
+  const { usuarioLogado } = useSessao();
   const [pecas, setPecas] = useState<Peca[]>([]);
 
-  function carregarPecas() {
-    const resultado = listarPecas() as Peca[];
-    setPecas(resultado);
-  }
+  const carregarPecas = useCallback(() => {
+    if (!usuarioLogado) {
+      setPecas([]);
+      return;
+    }
 
-  useFocusEffect(
-    useCallback(() => {
-      carregarPecas();
-    }, [])
-  );
+    const resultado = listarPecas(usuarioLogado.id) as Peca[];
+    setPecas(resultado);
+  }, [usuarioLogado]);
+
+  useFocusEffect(carregarPecas);
 
   function handleExcluir(id: number) {
     Alert.alert(
@@ -40,7 +43,9 @@ export default function MinhasPecasScreen() {
           text: 'Excluir',
           style: 'destructive',
           onPress: () => {
-            excluirPeca(id);
+            if (!usuarioLogado) return;
+
+            excluirPeca(id, usuarioLogado.id);
             carregarPecas();
           },
         },

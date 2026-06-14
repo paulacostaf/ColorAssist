@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 
 import ScreenScroll from '@/src/components/ScreenScroll';
+import { useSessao } from '@/src/contexts/SessaoContext';
 import { listarPecas } from '@/src/database/database';
 import { analisarImagem } from '@/src/services/api';
 
@@ -314,6 +315,7 @@ function compararCores(
 }
 
 export default function CompararRoupasScreen() {
+  const { usuarioLogado } = useSessao();
   const [peca1, setPeca1] = useState<PecaComparada>({
     imagemUri: null,
     resultado: null,
@@ -328,7 +330,13 @@ export default function CompararRoupasScreen() {
   const [seletorAberto, setSeletorAberto] = useState<1 | 2 | null>(null);
 
   function abrirListaPecas(numeroPeca: 1 | 2) {
-    const pecas = listarPecas() as PecaCadastrada[];
+    if (!usuarioLogado) {
+      Alert.alert('Erro', 'FaÃ§a login novamente para acessar suas peÃ§as.');
+      router.replace('/login');
+      return;
+    }
+
+    const pecas = listarPecas(usuarioLogado.id) as PecaCadastrada[];
 
     if (!pecas.length) {
       Alert.alert('Atenção', 'Nenhuma peça cadastrada foi encontrada.');

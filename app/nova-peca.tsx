@@ -13,9 +13,11 @@ import {
 
 import { cadastrarPeca } from "@/src/database/database";
 import ScreenScroll from "@/src/components/ScreenScroll";
+import { useSessao } from "@/src/contexts/SessaoContext";
 import { analisarImagem } from "@/src/services/api";
 
 export default function NovaPecaScreen() {
+  const { usuarioLogado } = useSessao();
   const [nome, setNome] = useState("");
   const [tipo, setTipo] = useState("");
   const [imagemUri, setImagemUri] = useState<string | null>(null);
@@ -90,6 +92,12 @@ export default function NovaPecaScreen() {
   }
 
   function handleSalvar() {
+    if (!usuarioLogado) {
+      Alert.alert("Erro", "FaÃ§a login novamente para cadastrar a peÃ§a.");
+      router.replace("/login");
+      return;
+    }
+
     if (!nome || !tipo) {
       Alert.alert("Atenção", "Preencha o nome e o tipo da peça.");
       return;
@@ -102,7 +110,7 @@ export default function NovaPecaScreen() {
 
     try {
       cadastrarPeca(
-        1,
+        usuarioLogado.id,
         nome,
         tipo,
         imagemUri,

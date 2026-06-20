@@ -44,6 +44,19 @@ export function cadastrarUsuario(nome: string, email: string, senha: string) {
   }
 }
 
+export function garantirUsuarioDemonstracao() {
+  const usuarioDemo = db.getFirstSync<Usuario>(
+    'SELECT id, nome, email FROM usuarios WHERE email = ?',
+    ['demo@colorassist.com']
+  );
+
+  if (usuarioDemo) {
+    return;
+  }
+
+  cadastrarUsuario('Usuário Demonstração', 'demo@colorassist.com', '123456');
+}
+
 export function buscarUsuarioPorEmailSenha(email: string, senha: string) {
   const usuario = db.getFirstSync<Usuario>(
     'SELECT id, nome, email FROM usuarios WHERE email = ? AND senha = ?',

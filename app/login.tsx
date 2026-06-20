@@ -1,4 +1,7 @@
-import { buscarUsuarioPorEmailSenha } from '@/src/database/database';
+import {
+  buscarUsuarioPorEmailSenha,
+  garantirUsuarioDemonstracao,
+} from '@/src/database/database';
 import ScreenScroll from '@/src/components/ScreenScroll';
 import { useSessao } from '@/src/contexts/SessaoContext';
 import { router } from 'expo-router';
@@ -28,6 +31,16 @@ export default function LoginScreen() {
     Alert.alert('Sucesso', 'Login realizado com sucesso!');
 
     router.replace('/home');
+  }
+
+  function handleLoginDemonstracao() {
+    try {
+      garantirUsuarioDemonstracao();
+      setEmail('demo@colorassist.com');
+      setSenha('123456');
+    } catch {
+      Alert.alert('Erro', 'NÃ£o foi possÃ­vel preparar o login de demonstraÃ§Ã£o.');
+    }
   }
 
   return (
@@ -72,6 +85,10 @@ export default function LoginScreen() {
           <Text style={styles.voltar}>Voltar</Text>
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity style={styles.botaoSecundario} onPress={handleLoginDemonstracao}>
+        <Text style={styles.textoBotaoSecundario}>{'Usar login de demonstra\u00e7\u00e3o'}</Text>
+      </TouchableOpacity>
     </ScreenScroll>
   );
 }
@@ -126,6 +143,21 @@ const styles = StyleSheet.create({
   },
   textoBotaoPrincipal: {
     color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  botaoSecundario: {
+    backgroundColor: '#EEF2FF',
+    width: '100%',
+    padding: 16,
+    borderRadius: 18,
+    alignItems: 'center',
+    marginTop: 96,
+    borderWidth: 1,
+    borderColor: '#4F46E5',
+  },
+  textoBotaoSecundario: {
+    color: '#4F46E5',
     fontSize: 16,
     fontWeight: 'bold',
   },

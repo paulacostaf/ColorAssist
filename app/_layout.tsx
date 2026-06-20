@@ -26,6 +26,12 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="cadastro" options={{ headerShown: false }} />
+          <Stack.Screen name="home" options={{ headerShown: false }} />
+          <Stack.Screen name="nova-peca" options={{ headerShown: false }} />
+          <Stack.Screen name="minhas-pecas" options={{ headerShown: false }} />
+          <Stack.Screen name="editar-peca" options={{ headerShown: false }} />
+          <Stack.Screen name="comparar-roupas" options={{ headerShown: false }} />
+          <Stack.Screen name="teste-daltonismo" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
         <StatusBar style="auto" />

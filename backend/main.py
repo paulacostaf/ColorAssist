@@ -248,13 +248,27 @@ def nomear_cor_por_hsv(hue, saturacao, valor, vermelho, verde, azul):
     croma_lab = float(np.hypot(eixo_a, eixo_b))
 
     vermelho_dominante = vermelho > verde + 18 and vermelho > azul + 8
+    vermelho_vivo = (
+        vermelho > 145
+        and saturacao > 120
+        and vermelho > verde + 45
+        and vermelho > azul + 35
+        and verde < 115
+        and azul < 135
+    )
     rosa_sombreado = (
         vermelho > 70
-        and azul > 45
-        and verde > 35
+        and azul > 70
+        and verde > 45
         and abs(verde - azul) < 75
+        and vermelho < 210
     )
-    rosa_frio = vermelho >= verde + 20 and azul >= verde - 10
+    rosa_frio = (
+        vermelho >= verde + 20
+        and azul >= verde - 10
+        and azul > 80
+        and vermelho - azul < 115
+    )
     laranja_rosado = vermelho > 125 and verde > 65 and azul < verde + 35
 
     # Neutros e quase neutros. Nao deixa vermelho/roxo escuro saturado virar preto.
@@ -309,6 +323,11 @@ def nomear_cor_por_hsv(hue, saturacao, valor, vermelho, verde, azul):
 
         if vinho_real:
             return "Vinho", "vermelho escuro fechado"
+
+        if vermelho_vivo:
+            if valor < 120 or luminosidade < 95:
+                return "Vermelho escuro", "tom avermelhado escuro"
+            return "Vermelho", "tom avermelhado intenso"
 
         if laranja_rosado and verde > azul + 12:
             if saturacao > 165:

@@ -3,7 +3,8 @@ import { useCallback, useState } from 'react';
 import { Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { useSessao } from '@/src/contexts/SessaoContext';
-import { excluirPeca, listarPecas } from '@/src/database/database';
+import { atualizarAnalisePeca, excluirPeca, listarPecas } from '@/src/database/database';
+import { analisarImagem } from '@/src/services/api';
 
 type Peca = {
   id: number;
@@ -17,6 +18,7 @@ type Peca = {
 export default function MinhasPecasScreen() {
   const { usuarioLogado } = useSessao();
   const [pecas, setPecas] = useState<Peca[]>([]);
+  const [pecaAnalisandoId, setPecaAnalisandoId] = useState<number | null>(null);
 
   const carregarPecas = useCallback(() => {
     if (!usuarioLogado) {
@@ -51,6 +53,64 @@ export default function MinhasPecasScreen() {
         },
       ]
     );
+  }
+
+  function extrairCorPrincipal(resultado: any) {
+    if (typeof resultado.cor_principal === 'string') {
+      return resultado.cor_principal;
+    }
+
+    if (resultado.cor_principal?.nome) {
+      return resultado.cor_principal.nome;
+    }
+
+    if (resultado.cor_principal?.cor) {
+      return resultado.cor_principal.cor;
+    }
+
+    if (resultado.cor_principal?.hex) {
+      return resultado.cor_principal.hex;
+    }
+
+    return JSON.stringify(resultado.cor_principal);
+  }
+
+  async function handleAnalisarIA(peca: Peca) {
+    if (!usuarioLogado) {
+      Alert.alert('Erro', 'Fa\u00e7a login novamente para analisar a pe\u00e7a.');
+      router.replace('/login');
+      return;
+    }
+
+    if (!peca.imagem_uri) {
+      Alert.alert('Aten\u00e7\u00e3o', 'Esta pe\u00e7a n\u00e3o possui imagem para analisar.');
+      return;
+    }
+
+    try {
+      setPecaAnalisandoId(peca.id);
+
+      const resultado = await analisarImagem(peca.imagem_uri);
+      const corTexto = extrairCorPrincipal(resultado);
+
+      atualizarAnalisePeca(
+        peca.id,
+        usuarioLogado.id,
+        corTexto,
+        JSON.stringify(resultado.cores),
+        resultado.imagem_resultado
+      );
+
+      carregarPecas();
+      Alert.alert('An\u00e1lise conclu\u00edda', `Cor principal: ${corTexto}`);
+    } catch (error: any) {
+      Alert.alert(
+        'Erro IA',
+        error.message || 'N\u00e3o foi poss\u00edvel analisar a imagem com IA.'
+      );
+    } finally {
+      setPecaAnalisandoId(null);
+    }
   }
 
   return (
@@ -92,6 +152,18 @@ export default function MinhasPecasScreen() {
               )}
 
               <View style={styles.acoes}>
+                {!item.cor_detectada && (
+                  <TouchableOpacity
+                    style={styles.botaoIA}
+                    onPress={() => handleAnalisarIA(item)}
+                    disabled={pecaAnalisandoId === item.id}
+                  >
+                    <Text style={styles.textoIA}>
+                      {pecaAnalisandoId === item.id ? 'Analisando...' : 'Analisar IA'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
                 <TouchableOpacity
                   style={styles.botaoEditar}
                   onPress={() => router.push(`/editar-peca?id=${item.id}`)}
@@ -192,8 +264,20 @@ const styles = StyleSheet.create({
   },
   acoes: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     marginTop: 4,
+  },
+  botaoIA: {
+    backgroundColor: '#0F172A',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  textoIA: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 13,
   },
   botaoEditar: {
     backgroundColor: '#EEF2FF',

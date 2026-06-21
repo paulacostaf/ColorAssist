@@ -145,3 +145,21 @@ export function editarPeca(
     statement.finalizeSync();
   }
 }
+
+export function atualizarAnalisePeca(
+  id: number,
+  usuarioId: number,
+  corDetectada: string,
+  paleta: string | null,
+  imagemResultado: string | null
+) {
+  const statement = db.prepareSync(
+    'UPDATE pecas SET cor_detectada = ?, paleta = ?, imagem_resultado = ? WHERE id = ? AND usuario_id = ?'
+  );
+
+  try {
+    statement.executeSync([corDetectada, paleta, imagemResultado, id, usuarioId]);
+  } finally {
+    statement.finalizeSync();
+  }
+}

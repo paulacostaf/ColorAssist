@@ -48,14 +48,14 @@ export default function HomeAppScreen() {
         >
           <Text style={styles.textoBotaoSecundario}>Comparar roupas</Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.botaoSair}
-          onPress={handleSair}
-        >
-          <Text style={styles.textoSair}>Sair</Text>
-        </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        style={styles.botaoSair}
+        onPress={handleSair}
+      >
+        <Text style={styles.textoSair}>Sair</Text>
+      </TouchableOpacity>
     </ScreenScroll>
   );
 }
@@ -125,6 +125,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 18,
     alignItems: 'center',
+    marginTop: 96,
   },
   textoSair: {
     color: '#DC2626',

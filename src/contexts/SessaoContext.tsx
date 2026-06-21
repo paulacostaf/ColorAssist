@@ -16,6 +16,7 @@ export type UsuarioLogado = {
 type SessaoContextValue = {
   usuarioLogado: UsuarioLogado | null;
   entrar: (usuario: UsuarioLogado) => void;
+  atualizarUsuarioLogado: (dados: Partial<UsuarioLogado>) => void;
   sair: () => void;
 };
 
@@ -28,6 +29,10 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     () => ({
       usuarioLogado,
       entrar: setUsuarioLogado,
+      atualizarUsuarioLogado: (dados: Partial<UsuarioLogado>) =>
+        setUsuarioLogado((usuarioAtual) =>
+          usuarioAtual ? { ...usuarioAtual, ...dados } : usuarioAtual
+        ),
       sair: () => setUsuarioLogado(null),
     }),
     [usuarioLogado],

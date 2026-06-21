@@ -1,8 +1,26 @@
 import { router } from 'expo-router';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import {
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 import ScreenScroll from '@/src/components/ScreenScroll';
 import { useSessao } from '@/src/contexts/SessaoContext';
+import { atualizarTipoDaltonismoUsuario } from '@/src/database/database';
+
+const TIPOS_DALTONISMO = [
+  'Não sei informar',
+  'Protanopia / Protanomalia',
+  'Deuteranopia / Deuteranomalia',
+  'Tritanopia / Tritanomalia',
+  'Outro',
+];
 
 function perfilVisual(tipoDaltonismo?: string | null) {
   const tipo = tipoDaltonismo?.trim();
@@ -15,11 +33,21 @@ function perfilVisual(tipoDaltonismo?: string | null) {
 }
 
 export default function HomeAppScreen() {
-  const { sair, usuarioLogado } = useSessao();
+  const { sair, usuarioLogado, atualizarUsuarioLogado } = useSessao();
+  const [modalPerfilVisivel, setModalPerfilVisivel] = useState(false);
 
   function handleSair() {
     sair();
     router.replace('/');
+  }
+
+  function selecionarPerfilVisual(tipoDaltonismo: string) {
+    if (usuarioLogado) {
+      atualizarTipoDaltonismoUsuario(usuarioLogado.id, tipoDaltonismo);
+      atualizarUsuarioLogado({ tipo_daltonismo: tipoDaltonismo });
+    }
+
+    setModalPerfilVisivel(false);
   }
 
   return (
@@ -37,11 +65,14 @@ export default function HomeAppScreen() {
           Escolha uma opção para começar a usar o ColorAssist.
         </Text>
 
-        <View style={styles.perfilBox}>
+        <TouchableOpacity
+          style={styles.perfilBox}
+          onPress={() => setModalPerfilVisivel(true)}
+        >
           <Text style={styles.perfilTexto}>
             Perfil visual: {perfilVisual(usuarioLogado?.tipo_daltonismo)}
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.card}>
@@ -72,6 +103,53 @@ export default function HomeAppScreen() {
       >
         <Text style={styles.textoSair}>Sair</Text>
       </TouchableOpacity>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={modalPerfilVisivel}
+        onRequestClose={() => setModalPerfilVisivel(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitulo}>Perfil visual</Text>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {TIPOS_DALTONISMO.map((tipo) => {
+                const selecionado =
+                  (usuarioLogado?.tipo_daltonismo || 'Não sei informar') === tipo;
+
+                return (
+                  <TouchableOpacity
+                    key={tipo}
+                    style={[
+                      styles.opcaoModal,
+                      selecionado && styles.opcaoModalSelecionada,
+                    ]}
+                    onPress={() => selecionarPerfilVisual(tipo)}
+                  >
+                    <Text
+                      style={[
+                        styles.textoOpcaoModal,
+                        selecionado && styles.textoOpcaoModalSelecionada,
+                      ]}
+                    >
+                      {tipo}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.botaoFecharModal}
+              onPress={() => setModalPerfilVisivel(false)}
+            >
+              <Text style={styles.textoFecharModal}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScreenScroll>
   );
 }
@@ -160,6 +238,57 @@ const styles = StyleSheet.create({
   },
   textoSair: {
     color: '#DC2626',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalTitulo: {
+    color: '#1E293B',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  opcaoModal: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 8,
+  },
+  opcaoModalSelecionada: {
+    backgroundColor: '#EEF2FF',
+    borderColor: '#4F46E5',
+  },
+  textoOpcaoModal: {
+    color: '#1E293B',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  textoOpcaoModalSelecionada: {
+    color: '#4F46E5',
+  },
+  botaoFecharModal: {
+    backgroundColor: '#4F46E5',
+    borderRadius: 16,
+    padding: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  textoFecharModal: {
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },

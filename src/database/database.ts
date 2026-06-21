@@ -84,6 +84,21 @@ export function buscarUsuarioPorEmailSenha(email: string, senha: string) {
   return usuario;
 }
 
+export function atualizarTipoDaltonismoUsuario(
+  usuarioId: number,
+  tipoDaltonismo: string
+) {
+  const statement = db.prepareSync(
+    'UPDATE usuarios SET tipo_daltonismo = ? WHERE id = ?'
+  );
+
+  try {
+    statement.executeSync([tipoDaltonismo, usuarioId]);
+  } finally {
+    statement.finalizeSync();
+  }
+}
+
 export function cadastrarPeca(
   usuarioId: number,
   nome: string,

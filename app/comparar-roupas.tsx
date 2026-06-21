@@ -71,7 +71,24 @@ function obterCorPrincipal(resultado: ResultadoAnalise | null): CorPrincipal {
     return { nome: resultado.cor_principal };
   }
 
-  return resultado.cor_principal;
+  return {
+    ...resultado.cor_principal,
+    hex: normalizarHex(resultado.cor_principal.hex),
+  };
+}
+
+function normalizarHex(hex?: string): string | undefined {
+  if (!hex) {
+    return undefined;
+  }
+
+  const valor = hex.trim().match(/#?([0-9a-fA-F]{6})/);
+
+  if (!valor) {
+    return undefined;
+  }
+
+  return `#${valor[1].toLowerCase()}`;
 }
 
 function primeiraCorDaPaleta(paleta: string | null): CorPrincipal {
@@ -128,11 +145,13 @@ function combinarResultadoComCorSalva(
 }
 
 function hexParaRgb(hex?: string): RGB | null {
-  if (!hex) {
+  const hexNormalizado = normalizarHex(hex);
+
+  if (!hexNormalizado) {
     return null;
   }
 
-  const valor = hex.replace('#', '').trim();
+  const valor = hexNormalizado.replace('#', '');
 
   if (!/^[0-9a-fA-F]{6}$/.test(valor)) {
     return null;
@@ -326,6 +345,7 @@ export default function CompararRoupasScreen() {
   });
   const [analisando, setAnalisando] = useState(false);
   const [comparacao, setComparacao] = useState<ResultadoComparacao | null>(null);
+  const [erroHexComparacao, setErroHexComparacao] = useState(false);
   const [pecasCadastradas, setPecasCadastradas] = useState<PecaCadastrada[]>([]);
   const [seletorAberto, setSeletorAberto] = useState<1 | 2 | null>(null);
 
@@ -368,6 +388,7 @@ export default function CompararRoupasScreen() {
     }
 
     setComparacao(null);
+    setErroHexComparacao(false);
     setSeletorAberto(null);
   }
 
@@ -407,6 +428,7 @@ export default function CompararRoupasScreen() {
     }
 
     setComparacao(null);
+    setErroHexComparacao(false);
     setSeletorAberto(null);
   }
 
@@ -418,6 +440,7 @@ export default function CompararRoupasScreen() {
 
     try {
       setAnalisando(true);
+      setErroHexComparacao(false);
 
       const resultadoSalvo1 = obterCorPrincipal(peca1.resultado);
       const resultadoSalvo2 = obterCorPrincipal(peca2.resultado);
@@ -444,7 +467,10 @@ export default function CompararRoupasScreen() {
 
       setPeca1((pecaAtual) => ({ ...pecaAtual, resultado: resultado1 }));
       setPeca2((pecaAtual) => ({ ...pecaAtual, resultado: resultado2 }));
-      setComparacao(compararCores(cor1.hex, cor2.hex, cor1.nome, cor2.nome));
+
+      const novaComparacao = compararCores(cor1.hex, cor2.hex, cor1.nome, cor2.nome);
+      setComparacao(novaComparacao);
+      setErroHexComparacao(!novaComparacao);
     } catch (error: any) {
       Alert.alert(
         'Erro IA',
@@ -596,7 +622,7 @@ export default function CompararRoupasScreen() {
           </View>
         )}
 
-        {peca1.resultado && peca2.resultado && !comparacao && (
+        {erroHexComparacao && (
           <View style={styles.alertaBox}>
             <Text style={styles.alertaTexto}>
               Não foi possível calcular a comparação porque uma das cores não retornou HEX.

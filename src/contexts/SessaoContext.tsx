@@ -10,6 +10,7 @@ export type UsuarioLogado = {
   id: number;
   nome: string;
   email: string;
+  tipo_daltonismo?: string | null;
 };
 
 type SessaoContextValue = {

@@ -4,8 +4,18 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ScreenScroll from '@/src/components/ScreenScroll';
 import { useSessao } from '@/src/contexts/SessaoContext';
 
+function perfilVisual(tipoDaltonismo?: string | null) {
+  const tipo = tipoDaltonismo?.trim();
+
+  if (!tipo || tipo === 'Não sei informar' || tipo === 'Outro') {
+    return 'análise geral';
+  }
+
+  return tipo;
+}
+
 export default function HomeAppScreen() {
-  const { sair } = useSessao();
+  const { sair, usuarioLogado } = useSessao();
 
   function handleSair() {
     sair();
@@ -26,6 +36,12 @@ export default function HomeAppScreen() {
         <Text style={styles.subtitulo}>
           Escolha uma opção para começar a usar o ColorAssist.
         </Text>
+
+        <View style={styles.perfilBox}>
+          <Text style={styles.perfilTexto}>
+            Perfil visual: {perfilVisual(usuarioLogado?.tipo_daltonismo)}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.card}>
@@ -81,6 +97,21 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
     lineHeight: 21,
+  },
+  perfilBox: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    marginTop: 14,
+  },
+  perfilTexto: {
+    color: '#4F46E5',
+    fontSize: 13,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   card: {
     backgroundColor: '#FFFFFF',

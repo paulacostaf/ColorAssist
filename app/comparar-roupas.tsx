@@ -62,6 +62,8 @@ type ResultadoComparacao = {
   mensagem: string;
 };
 
+type TipoDaltonismo = string | null | undefined;
+
 function obterCorPrincipal(resultado: ResultadoAnalise | null): CorPrincipal {
   if (!resultado?.cor_principal) {
     return {};
@@ -241,12 +243,16 @@ function familiaDaCor(nome?: string) {
     return 'amarelo';
   }
 
+  if (cor.includes('marrom')) {
+    return 'marrom';
+  }
+
   if (
     cor.includes('preto') ||
     cor.includes('branco') ||
     cor.includes('cinza') ||
     cor.includes('bege') ||
-    cor.includes('marrom')
+    cor.includes('jeans')
   ) {
     return 'neutro';
   }
@@ -254,8 +260,214 @@ function familiaDaCor(nome?: string) {
   return 'indefinida';
 }
 
+function nomeCor(nome?: string) {
+  return nome?.trim() || 'A primeira cor';
+}
+
+function nomeCorMinusculo(nome?: string) {
+  const cor = nome?.trim();
+
+  return cor ? cor.toLowerCase() : 'a segunda cor';
+}
+
+function brilhoMedio(cor: RGB) {
+  return (cor.r + cor.g + cor.b) / 3;
+}
+
+function corEscura(cor: RGB, nome?: string) {
+  const corNome = nome?.toLowerCase() || '';
+
+  return brilhoMedio(cor) < 95 || corNome.includes('escuro') || corNome.includes('preto');
+}
+
+function corClara(cor: RGB, nome?: string) {
+  const corNome = nome?.toLowerCase() || '';
+
+  return brilhoMedio(cor) > 200 || corNome.includes('claro') || corNome.includes('branco');
+}
+
+function corIntensa(cor: RGB) {
+  const maiorCanal = Math.max(cor.r, cor.g, cor.b);
+  const menorCanal = Math.min(cor.r, cor.g, cor.b);
+
+  return maiorCanal > 135 && maiorCanal - menorCanal > 65;
+}
+
+function parVisual(nome1?: string, nome2?: string) {
+  return [familiaDaCor(nome1), familiaDaCor(nome2)].sort().join('-');
+}
+
+function coresProximasOuConfundiveis(nome1?: string, nome2?: string) {
+  const familias = [familiaDaCor(nome1), familiaDaCor(nome2)];
+
+  if (familias[0] !== 'indefinida' && familias[0] === familias[1]) {
+    return true;
+  }
+
+  return [
+    'roxo-vermelho',
+    'rosa-vermelho',
+    'marrom-verde',
+    'azul-roxo',
+    'neutro-verde',
+    'amarelo-verde',
+    'marrom-vermelho',
+  ].includes(parVisual(nome1, nome2));
+}
+
+function perfilDaltonismo(tipoDaltonismo: TipoDaltonismo) {
+  const tipo = tipoDaltonismo?.trim();
+
+  if (!tipo || tipo === 'Não sei informar' || tipo === 'Outro') {
+    return 'análise geral';
+  }
+
+  return tipo;
+}
+
+function incluiFamilia(familias: string[], familia: string) {
+  return familias.includes(familia);
+}
+
+function combinacaoSensivelParaPerfil(
+  tipoDaltonismo: TipoDaltonismo,
+  nome1?: string,
+  nome2?: string,
+) {
+  const perfil = perfilDaltonismo(tipoDaltonismo);
+  const familias = [familiaDaCor(nome1), familiaDaCor(nome2)];
+  const par = parVisual(nome1, nome2);
+
+  if (perfil === 'Protanopia / Protanomalia') {
+    return (
+      par === 'verde-vermelho' ||
+      par === 'marrom-vermelho' ||
+      par === 'neutro-vermelho' ||
+      (incluiFamilia(familias, 'vermelho') && nome1?.toLowerCase().includes('vinho')) ||
+      (incluiFamilia(familias, 'vermelho') && nome2?.toLowerCase().includes('vinho')) ||
+      par === 'neutro-rosa'
+    );
+  }
+
+  if (perfil === 'Deuteranopia / Deuteranomalia') {
+    return (
+      par === 'verde-vermelho' ||
+      par === 'marrom-verde' ||
+      par === 'neutro-verde' ||
+      (incluiFamilia(familias, 'vermelho') && nome1?.toLowerCase().includes('vinho')) ||
+      (incluiFamilia(familias, 'vermelho') && nome2?.toLowerCase().includes('vinho'))
+    );
+  }
+
+  if (perfil === 'Tritanopia / Tritanomalia') {
+    return (
+      par === 'azul-roxo' ||
+      par === 'azul-verde' ||
+      par === 'amarelo-rosa' ||
+      par === 'amarelo-neutro' ||
+      par === 'azul-neutro'
+    );
+  }
+
+  return false;
+}
+
+function complementoPerfilDaltonismo(
+  tipoDaltonismo: TipoDaltonismo,
+  nome1?: string,
+  nome2?: string,
+) {
+  const perfil = perfilDaltonismo(tipoDaltonismo);
+
+  if (perfil === 'análise geral') {
+    return 'A análise considera contraste visual e risco de confusão entre as cores identificadas.';
+  }
+
+  const sensivel = combinacaoSensivelParaPerfil(tipoDaltonismo, nome1, nome2);
+
+  if (perfil === 'Protanopia / Protanomalia') {
+    return sensivel
+      ? 'Considerando o tipo de daltonismo informado, combinações com tons avermelhados podem exigir mais atenção para diferenciação.'
+      : 'Considerando o tipo de daltonismo informado, a análise observa especialmente possíveis dificuldades com tons avermelhados.';
+  }
+
+  if (perfil === 'Deuteranopia / Deuteranomalia') {
+    return sensivel
+      ? 'Considerando o tipo de daltonismo informado, combinações entre tons verdes, vermelhos e marrons podem exigir mais atenção.'
+      : 'Considerando o tipo de daltonismo informado, a análise observa especialmente possíveis dificuldades entre tons verdes, vermelhos e marrons.';
+  }
+
+  if (perfil === 'Tritanopia / Tritanomalia') {
+    return sensivel
+      ? 'Considerando o tipo de daltonismo informado, combinações entre tons azulados, amarelados e arroxeados podem exigir mais atenção.'
+      : 'Considerando o tipo de daltonismo informado, a análise observa especialmente possíveis dificuldades entre tons azulados, amarelados e arroxeados.';
+  }
+
+  return 'A análise considera contraste visual e risco de confusão entre as cores identificadas.';
+}
+
+function mensagemContextual(
+  cor1: RGB,
+  cor2: RGB,
+  contraste: ResultadoComparacao['contraste'],
+  risco: ResultadoComparacao['risco'],
+  combinacaoVisual: ResultadoComparacao['combinacaoVisual'],
+  tipoDaltonismo?: TipoDaltonismo,
+  nome1?: string,
+  nome2?: string,
+) {
+  const familias = [familiaDaCor(nome1), familiaDaCor(nome2)];
+  const temNeutra = familias.includes('neutro');
+  const nomes = `${nomeCor(nome1)} e ${nomeCorMinusculo(nome2)}`;
+  const proximas = coresProximasOuConfundiveis(nome1, nome2);
+  const ambasEscuras = corEscura(cor1, nome1) && corEscura(cor2, nome2);
+  const ambasClaras = corClara(cor1, nome1) && corClara(cor2, nome2);
+  const ambasIntensas = corIntensa(cor1) && corIntensa(cor2);
+  const escuraComIntensa =
+    (corEscura(cor1, nome1) && corIntensa(cor2)) ||
+    (corEscura(cor2, nome2) && corIntensa(cor1));
+
+  if (escuraComIntensa && proximas) {
+    return `${nomes} s\u00e3o cores intensas e visualmente pr\u00f3ximas. Para algumas pessoas com daltonismo, essa combina\u00e7\u00e3o pode dificultar a diferencia\u00e7\u00e3o entre as pe\u00e7as. Uma pe\u00e7a neutra ou mais clara pode facilitar a percep\u00e7\u00e3o. ${complementoPerfilDaltonismo(tipoDaltonismo, nome1, nome2)}`;
+  }
+
+  if (ambasEscuras) {
+    return `${nomes} aparecem como tons escuros, o que pode reduzir o contraste entre as pe\u00e7as. Para algumas pessoas com daltonismo, essa proximidade pode dificultar a diferencia\u00e7\u00e3o. Uma pe\u00e7a mais clara ou neutra pode facilitar a percep\u00e7\u00e3o. ${complementoPerfilDaltonismo(tipoDaltonismo, nome1, nome2)}`;
+  }
+
+  if (ambasClaras) {
+    return `${nomes} aparecem como tons claros, o que pode reduzir o contraste entre as pe\u00e7as. Uma pe\u00e7a mais escura ou neutra pode facilitar a diferencia\u00e7\u00e3o para pessoas com daltonismo. ${complementoPerfilDaltonismo(tipoDaltonismo, nome1, nome2)}`;
+  }
+
+  if (temNeutra && !proximas) {
+    return `${nomes} tendem a ser mais f\u00e1ceis de diferenciar, porque a pe\u00e7a neutra ajuda a destacar a cor principal. Essa combina\u00e7\u00e3o costuma ser mais segura para algumas pessoas com daltonismo. ${complementoPerfilDaltonismo(tipoDaltonismo, nome1, nome2)}`;
+  }
+
+  if (ambasIntensas && proximas) {
+    return `${nomes} s\u00e3o cores intensas e visualmente pr\u00f3ximas. Para algumas pessoas com daltonismo, essa combina\u00e7\u00e3o pode dificultar a diferencia\u00e7\u00e3o entre as pe\u00e7as. Uma pe\u00e7a neutra, mais clara ou mais escura pode facilitar a percep\u00e7\u00e3o. ${complementoPerfilDaltonismo(tipoDaltonismo, nome1, nome2)}`;
+  }
+
+  if (proximas) {
+    return `${nomes} pertencem a fam\u00edlias visuais pr\u00f3ximas. Para algumas pessoas com daltonismo, essa combina\u00e7\u00e3o pode dificultar a diferencia\u00e7\u00e3o entre as pe\u00e7as. Uma pe\u00e7a neutra, como branco, preto, cinza, bege ou jeans, pode facilitar a percep\u00e7\u00e3o. ${complementoPerfilDaltonismo(tipoDaltonismo, nome1, nome2)}`;
+  }
+
+  if (contraste === 'bom' && risco === 'baixo') {
+    return `${nomes} apresentam bom contraste e tendem a ser mais f\u00e1ceis de diferenciar. Para algumas pessoas com daltonismo, essa combina\u00e7\u00e3o oferece uma separa\u00e7\u00e3o visual mais segura entre as pe\u00e7as. ${complementoPerfilDaltonismo(tipoDaltonismo, nome1, nome2)}`;
+  }
+
+  if (ambasIntensas) {
+    return `${nomes} s\u00e3o cores fortes e visualmente marcantes. Como n\u00e3o pertencem \u00e0 mesma fam\u00edlia visual, tendem a ser mais f\u00e1ceis de diferenciar, mas uma pe\u00e7a neutra ainda pode tornar a percep\u00e7\u00e3o mais segura. ${complementoPerfilDaltonismo(tipoDaltonismo, nome1, nome2)}`;
+  }
+
+  if (combinacaoVisual === 'Pouco usual') {
+    return `${nomes} formam uma combina\u00e7\u00e3o menos neutra e podem exigir mais aten\u00e7\u00e3o na diferencia\u00e7\u00e3o. Para algumas pessoas com daltonismo, uma pe\u00e7a neutra pode ajudar a separar melhor as cores. ${complementoPerfilDaltonismo(tipoDaltonismo, nome1, nome2)}`;
+  }
+
+  return `${nomes} possuem diferen\u00e7a visual moderada. Para algumas pessoas com daltonismo, a diferencia\u00e7\u00e3o entre as pe\u00e7as pode exigir aten\u00e7\u00e3o. Uma pe\u00e7a mais clara, mais escura ou neutra pode facilitar a percep\u00e7\u00e3o. ${complementoPerfilDaltonismo(tipoDaltonismo, nome1, nome2)}`;
+}
+
 function combinacaoPoucoUsual(nome1?: string, nome2?: string) {
-  const familias = [familiaDaCor(nome1), familiaDaCor(nome2)].sort().join('-');
+  const familias = parVisual(nome1, nome2);
 
   return [
     'amarelo-roxo',
@@ -271,6 +483,7 @@ function compararCores(
   hex2?: string,
   nome1?: string,
   nome2?: string,
+  tipoDaltonismo?: TipoDaltonismo,
 ): ResultadoComparacao | null {
   const cor1 = hexParaRgb(hex1);
   const cor2 = hexParaRgb(hex2);
@@ -283,6 +496,10 @@ function compararCores(
   const distancia = distanciaRgb(cor1, cor2);
   const brilho = diferencaBrilho(cor1, cor2);
   const distanciaDaltonismo = diferencaParaDaltonismo(cor1, cor2);
+  const proximas = coresProximasOuConfundiveis(nome1, nome2);
+  const ambasEscuras = corEscura(cor1, nome1) && corEscura(cor2, nome2);
+  const ambasClaras = corClara(cor1, nome1) && corClara(cor2, nome2);
+  const sensivelParaPerfil = combinacaoSensivelParaPerfil(tipoDaltonismo, nome1, nome2);
 
   let contraste: ResultadoComparacao['contraste'] = 'baixo';
   if (contrasteNumerico >= 3 || (distancia >= 145 && brilho >= 45)) {
@@ -298,32 +515,43 @@ function compararCores(
     risco = 'médio';
   }
 
-  let mensagem =
-    risco === 'baixo'
-      ? 'As peças possuem bom contraste visual e tendem a ser fáceis de diferenciar.'
-      : risco === 'médio'
-        ? 'As peças têm alguma diferença visual, mas ainda podem causar dúvida dependendo da iluminação.'
-        : 'Atenção: as cores são próximas e podem causar confusão visual.';
+  let mensagem = '';
 
   let combinacaoVisual: ResultadoComparacao['combinacaoVisual'] =
     'Não recomendada para acessibilidade';
-
-  mensagem =
-    'As cores são próximas ou têm baixo contraste, podendo dificultar a diferenciação. Para facilitar a percepção, prefira uma peça mais clara, mais escura ou neutra.';
 
   if (contraste === 'bom' && risco === 'baixo') {
     combinacaoVisual = combinacaoPoucoUsual(nome1, nome2)
       ? 'Pouco usual'
       : 'Recomendada';
-    mensagem =
-      combinacaoVisual === 'Pouco usual'
-        ? 'Essas cores não formam uma combinação visual tão comum. Para maior harmonia, considere combinar uma das peças com tons neutros, como branco, preto, cinza, bege ou jeans.'
-        : 'As peças apresentam bom contraste visual e tendem a ser fáceis de diferenciar.';
   } else if (contraste !== 'baixo' && risco !== 'alto') {
     combinacaoVisual = 'Recomendada com atenção';
-    mensagem =
-      'As peças têm diferença visual moderada. A percepção pode variar conforme a iluminação.';
   }
+
+  if ((proximas && risco === 'alto') || ambasEscuras || ambasClaras) {
+    combinacaoVisual = contraste === 'baixo'
+      ? 'Não recomendada para acessibilidade'
+      : 'Recomendada com atenção';
+  } else if (proximas && combinacaoVisual === 'Recomendada') {
+    combinacaoVisual = 'Recomendada com atenção';
+  }
+
+  if (sensivelParaPerfil) {
+    combinacaoVisual = contraste === 'baixo'
+      ? 'Não recomendada para acessibilidade'
+      : 'Recomendada com atenção';
+  }
+
+  mensagem = mensagemContextual(
+    cor1,
+    cor2,
+    contraste,
+    risco,
+    combinacaoVisual,
+    tipoDaltonismo,
+    nome1,
+    nome2,
+  );
 
   return {
     contraste,
@@ -468,7 +696,13 @@ export default function CompararRoupasScreen() {
       setPeca1((pecaAtual) => ({ ...pecaAtual, resultado: resultado1 }));
       setPeca2((pecaAtual) => ({ ...pecaAtual, resultado: resultado2 }));
 
-      const novaComparacao = compararCores(cor1.hex, cor2.hex, cor1.nome, cor2.nome);
+      const novaComparacao = compararCores(
+        cor1.hex,
+        cor2.hex,
+        cor1.nome,
+        cor2.nome,
+        usuarioLogado?.tipo_daltonismo,
+      );
       setComparacao(novaComparacao);
       setErroHexComparacao(!novaComparacao);
     } catch (error: any) {
@@ -609,6 +843,9 @@ export default function CompararRoupasScreen() {
         {comparacao && (
           <View style={styles.comparacaoBox}>
             <Text style={styles.resultadoTitulo}>Avaliação de acessibilidade</Text>
+            <Text style={styles.perfilConsiderado}>
+              Perfil considerado: {perfilDaltonismo(usuarioLogado?.tipo_daltonismo)}
+            </Text>
             <Text style={styles.resultadoTexto}>
               Contraste: {comparacao.contraste}
             </Text>
@@ -846,6 +1083,12 @@ const styles = StyleSheet.create({
     color: '#065F46',
     fontWeight: 'bold',
     marginBottom: 4,
+  },
+  perfilConsiderado: {
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   resultadoTexto: {
     color: '#047857',

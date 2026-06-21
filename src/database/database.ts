@@ -6,6 +6,7 @@ export type Usuario = {
   id: number;
   nome: string;
   email: string;
+  tipo_daltonismo?: string | null;
 };
 
 export function initDatabase() {
@@ -14,7 +15,8 @@ export function initDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nome TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
-      senha TEXT NOT NULL
+      senha TEXT NOT NULL,
+      tipo_daltonismo TEXT DEFAULT 'Não sei informar'
     );
 
     CREATE TABLE IF NOT EXISTS pecas (
@@ -30,15 +32,31 @@ export function initDatabase() {
       FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
     );
   `);
+
+  const colunasUsuarios = db.getAllSync<{ name: string }>('PRAGMA table_info(usuarios)');
+  const temTipoDaltonismo = colunasUsuarios.some(
+    (coluna) => coluna.name === 'tipo_daltonismo'
+  );
+
+  if (!temTipoDaltonismo) {
+    db.execSync(
+      "ALTER TABLE usuarios ADD COLUMN tipo_daltonismo TEXT DEFAULT 'Não sei informar'"
+    );
+  }
 }
 
-export function cadastrarUsuario(nome: string, email: string, senha: string) {
+export function cadastrarUsuario(
+  nome: string,
+  email: string,
+  senha: string,
+  tipoDaltonismo = 'Não sei informar'
+) {
   const statement = db.prepareSync(
-    'INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)'
+    'INSERT INTO usuarios (nome, email, senha, tipo_daltonismo) VALUES (?, ?, ?, ?)'
   );
 
   try {
-    statement.executeSync([nome, email, senha]);
+    statement.executeSync([nome, email, senha, tipoDaltonismo]);
   } finally {
     statement.finalizeSync();
   }
@@ -59,7 +77,7 @@ export function garantirUsuarioDemonstracao() {
 
 export function buscarUsuarioPorEmailSenha(email: string, senha: string) {
   const usuario = db.getFirstSync<Usuario>(
-    'SELECT id, nome, email FROM usuarios WHERE email = ? AND senha = ?',
+    'SELECT id, nome, email, tipo_daltonismo FROM usuarios WHERE email = ? AND senha = ?',
     [email, senha]
   );
 

@@ -13,26 +13,12 @@ import {
   View,
 } from "react-native";
 
-import { cadastrarPeca } from "@/src/database/database";
+import { analisarImagemUseCase } from "@/src/application/analise/analisarImagemUseCase";
+import { cadastrarPecaUseCase } from "@/src/application/pecas/cadastrarPecaUseCase";
 import ScreenScroll from "@/src/components/ScreenScroll";
 import { useSessao } from "@/src/contexts/SessaoContext";
-import { analisarImagem } from "@/src/services/api";
-
-const TIPOS_PECA = [
-  "Camiseta",
-  "Blusa",
-  "Camisa",
-  "Cal\u00e7a",
-  "Shorts",
-  "Saia",
-  "Vestido",
-  "Casaco",
-  "Jaqueta",
-  "Moletom",
-  "T\u00eanis/Sapato",
-  "Acess\u00f3rio",
-  "Outro",
-];
+import { extrairNomeCorPrincipal } from "@/src/domain/analise/AnaliseImagem";
+import { TIPOS_PECA } from "@/src/domain/pecas/Peca";
 
 export default function NovaPecaScreen() {
   const { usuarioLogado } = useSessao();
@@ -79,25 +65,12 @@ export default function NovaPecaScreen() {
     try {
       setAnalisando(true);
 
-      const resultado = await analisarImagem(imagemUri);
-
-      let corTexto = "";
-
-      if (typeof resultado.cor_principal === "string") {
-        corTexto = resultado.cor_principal;
-      } else if (resultado.cor_principal?.nome) {
-        corTexto = resultado.cor_principal.nome;
-      } else if (resultado.cor_principal?.cor) {
-        corTexto = resultado.cor_principal.cor;
-      } else if (resultado.cor_principal?.hex) {
-        corTexto = resultado.cor_principal.hex;
-      } else {
-        corTexto = JSON.stringify(resultado.cor_principal);
-      }
+      const resultado = await analisarImagemUseCase(imagemUri);
+      const corTexto = extrairNomeCorPrincipal(resultado);
 
       setCorDetectada(corTexto);
       setPaleta(JSON.stringify(resultado.cores));
-      setImagemResultado(resultado.imagem_resultado);
+      setImagemResultado(resultado.imagem_resultado || null);
 
       Alert.alert("Análise concluída", `Cor principal: ${corTexto}`);
     } catch (error: any) {
@@ -128,15 +101,15 @@ export default function NovaPecaScreen() {
     }
 
     try {
-      cadastrarPeca(
-        usuarioLogado.id,
+      cadastrarPecaUseCase({
+        usuarioId: usuarioLogado.id,
         nome,
         tipo,
         imagemUri,
         corDetectada,
         paleta,
         imagemResultado,
-      );
+      });
 
       Alert.alert("Sucesso", "Peça cadastrada com sucesso!");
 

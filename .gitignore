@@ -36,6 +36,14 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Python
+__pycache__/
+*.pyc
+
+# App-generated files
+backend/static/uploads/
+backend/static/resultados/
+
 app-example
 
 # generated native folders

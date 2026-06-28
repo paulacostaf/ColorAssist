@@ -12,32 +12,11 @@ import {
   View,
 } from 'react-native';
 
+import { buscarPecaUseCase } from '@/src/application/pecas/buscarPecaUseCase';
+import { editarPecaUseCase } from '@/src/application/pecas/editarPecaUseCase';
 import { useSessao } from '@/src/contexts/SessaoContext';
-import { buscarPecaPorId, editarPeca } from '@/src/database/database';
+import { Peca, TIPOS_PECA } from '@/src/domain/pecas/Peca';
 import ScreenScroll from '@/src/components/ScreenScroll';
-
-const TIPOS_PECA = [
-  'Camiseta',
-  'Blusa',
-  'Camisa',
-  'Cal\u00e7a',
-  'Shorts',
-  'Saia',
-  'Vestido',
-  'Casaco',
-  'Jaqueta',
-  'Moletom',
-  'T\u00eanis/Sapato',
-  'Acess\u00f3rio',
-  'Outro',
-];
-
-type Peca = {
-  id: number;
-  nome: string;
-  tipo: string;
-  imagem_uri: string | null;
-};
 
 export default function EditarPecaScreen() {
   const { id } = useLocalSearchParams();
@@ -51,11 +30,11 @@ export default function EditarPecaScreen() {
   useEffect(() => {
     if (!id || !usuarioLogado) return;
 
-    const peca = buscarPecaPorId(Number(id), usuarioLogado.id) as Peca | null;
+    const peca = buscarPecaUseCase(Number(id), usuarioLogado.id) as Peca | null;
 
     if (peca) {
       setNome(peca.nome);
-      setTipo(TIPOS_PECA.includes(peca.tipo) ? peca.tipo : 'Outro');
+      setTipo(TIPOS_PECA.includes(peca.tipo as any) ? peca.tipo || 'Outro' : 'Outro');
       setImagemUri(peca.imagem_uri);
     }
   }, [id, usuarioLogado]);
@@ -73,7 +52,7 @@ export default function EditarPecaScreen() {
     }
 
     try {
-      editarPeca(Number(id), usuarioLogado.id, nome, tipo);
+      editarPecaUseCase(Number(id), usuarioLogado.id, nome, tipo);
 
       Alert.alert('Sucesso', 'Peça editada com sucesso!');
 

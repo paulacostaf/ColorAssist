@@ -2,18 +2,13 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { analisarImagemUseCase } from '@/src/application/analise/analisarImagemUseCase';
+import { atualizarAnalisePecaUseCase } from '@/src/application/pecas/atualizarAnalisePecaUseCase';
+import { excluirPecaUseCase } from '@/src/application/pecas/excluirPecaUseCase';
+import { listarPecasUseCase } from '@/src/application/pecas/listarPecasUseCase';
 import { useSessao } from '@/src/contexts/SessaoContext';
-import { atualizarAnalisePeca, excluirPeca, listarPecas } from '@/src/database/database';
-import { analisarImagem } from '@/src/services/api';
-
-type Peca = {
-  id: number;
-  nome: string;
-  tipo: string;
-  imagem_uri: string | null;
-  cor_detectada: string | null;
-  data_cadastro: string;
-};
+import { extrairNomeCorPrincipal } from '@/src/domain/analise/AnaliseImagem';
+import { Peca } from '@/src/domain/pecas/Peca';
 
 export default function MinhasPecasScreen() {
   const { usuarioLogado } = useSessao();
@@ -26,7 +21,7 @@ export default function MinhasPecasScreen() {
       return;
     }
 
-    const resultado = listarPecas(usuarioLogado.id) as Peca[];
+    const resultado = listarPecasUseCase(usuarioLogado.id);
     setPecas(resultado);
   }, [usuarioLogado]);
 
@@ -47,32 +42,12 @@ export default function MinhasPecasScreen() {
           onPress: () => {
             if (!usuarioLogado) return;
 
-            excluirPeca(id, usuarioLogado.id);
+            excluirPecaUseCase(id, usuarioLogado.id);
             carregarPecas();
           },
         },
       ]
     );
-  }
-
-  function extrairCorPrincipal(resultado: any) {
-    if (typeof resultado.cor_principal === 'string') {
-      return resultado.cor_principal;
-    }
-
-    if (resultado.cor_principal?.nome) {
-      return resultado.cor_principal.nome;
-    }
-
-    if (resultado.cor_principal?.cor) {
-      return resultado.cor_principal.cor;
-    }
-
-    if (resultado.cor_principal?.hex) {
-      return resultado.cor_principal.hex;
-    }
-
-    return JSON.stringify(resultado.cor_principal);
   }
 
   async function handleAnalisarIA(peca: Peca) {
@@ -90,16 +65,16 @@ export default function MinhasPecasScreen() {
     try {
       setPecaAnalisandoId(peca.id);
 
-      const resultado = await analisarImagem(peca.imagem_uri);
-      const corTexto = extrairCorPrincipal(resultado);
+      const resultado = await analisarImagemUseCase(peca.imagem_uri);
+      const corTexto = extrairNomeCorPrincipal(resultado);
 
-      atualizarAnalisePeca(
-        peca.id,
-        usuarioLogado.id,
-        corTexto,
-        JSON.stringify(resultado.cores),
-        resultado.imagem_resultado
-      );
+      atualizarAnalisePecaUseCase({
+        id: peca.id,
+        usuarioId: usuarioLogado.id,
+        corDetectada: corTexto,
+        paleta: JSON.stringify(resultado.cores),
+        imagemResultado: resultado.imagem_resultado || null,
+      });
 
       carregarPecas();
       Alert.alert('An\u00e1lise conclu\u00edda', `Cor principal: ${corTexto}`);

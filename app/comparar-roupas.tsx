@@ -10,21 +10,19 @@ import {
   View,
 } from 'react-native';
 
+import { analisarImagemUseCase } from '@/src/application/analise/analisarImagemUseCase';
+import { listarPecasUseCase } from '@/src/application/pecas/listarPecasUseCase';
 import ScreenScroll from '@/src/components/ScreenScroll';
 import { useSessao } from '@/src/contexts/SessaoContext';
-import { listarPecas } from '@/src/database/database';
-import { analisarImagem } from '@/src/services/api';
-
-type CorPrincipal = {
-  nome?: string;
-  tom?: string;
-  hex?: string;
-  rgb?: string;
-};
-
-type ResultadoAnalise = {
-  cor_principal?: string | CorPrincipal;
-};
+import {
+  combinarResultadoComCorSalva,
+  CorPrincipal,
+  normalizarHex,
+  obterCorPrincipal,
+  ResultadoAnaliseImagem,
+  resultadoDaPecaCadastrada,
+} from '@/src/domain/analise/AnaliseImagem';
+import { Peca } from '@/src/domain/pecas/Peca';
 
 type RGB = {
   r: number;
@@ -34,22 +32,13 @@ type RGB = {
 
 type PecaComparada = {
   imagemUri: string | null;
-  resultado: ResultadoAnalise | null;
+  resultado: ResultadoAnaliseImagem | null;
   nomePeca?: string | null;
   tipoPeca?: string | null;
   corDetectadaSalva?: string | null;
 };
 
-type PecaCadastrada = {
-  id: number;
-  nome: string;
-  tipo: string | null;
-  imagem_uri: string | null;
-  cor_detectada: string | null;
-  paleta: string | null;
-  imagem_resultado: string | null;
-  data_cadastro: string | null;
-};
+type PecaCadastrada = Peca;
 
 type ResultadoComparacao = {
   contraste: 'baixo' | 'médio' | 'bom';
@@ -63,88 +52,6 @@ type ResultadoComparacao = {
 };
 
 type TipoDaltonismo = string | null | undefined;
-
-function obterCorPrincipal(resultado: ResultadoAnalise | null): CorPrincipal {
-  if (!resultado?.cor_principal) {
-    return {};
-  }
-
-  if (typeof resultado.cor_principal === 'string') {
-    return { nome: resultado.cor_principal };
-  }
-
-  return {
-    ...resultado.cor_principal,
-    hex: normalizarHex(resultado.cor_principal.hex),
-  };
-}
-
-function normalizarHex(hex?: string): string | undefined {
-  if (!hex) {
-    return undefined;
-  }
-
-  const valor = hex.trim().match(/#?([0-9a-fA-F]{6})/);
-
-  if (!valor) {
-    return undefined;
-  }
-
-  return `#${valor[1].toLowerCase()}`;
-}
-
-function primeiraCorDaPaleta(paleta: string | null): CorPrincipal {
-  if (!paleta) {
-    return {};
-  }
-
-  try {
-    const cores = JSON.parse(paleta);
-
-    if (Array.isArray(cores) && cores[0]) {
-      return cores[0];
-    }
-  } catch {
-    return {};
-  }
-
-  return {};
-}
-
-function resultadoDaPecaCadastrada(peca: PecaCadastrada): ResultadoAnalise | null {
-  const corPaleta = primeiraCorDaPaleta(peca.paleta);
-  const corPrincipal: CorPrincipal = {
-    ...corPaleta,
-    nome: peca.cor_detectada || corPaleta.nome,
-  };
-
-  if (!corPrincipal.nome && !corPrincipal.hex) {
-    return null;
-  }
-
-  return {
-    cor_principal: corPrincipal,
-  };
-}
-
-function combinarResultadoComCorSalva(
-  resultado: ResultadoAnalise,
-  corDetectadaSalva?: string | null,
-): ResultadoAnalise {
-  if (!corDetectadaSalva) {
-    return resultado;
-  }
-
-  const corPrincipal = obterCorPrincipal(resultado);
-
-  return {
-    ...resultado,
-    cor_principal: {
-      ...corPrincipal,
-      nome: corDetectadaSalva,
-    },
-  };
-}
 
 function hexParaRgb(hex?: string): RGB | null {
   const hexNormalizado = normalizarHex(hex);
@@ -584,7 +491,7 @@ export default function CompararRoupasScreen() {
       return;
     }
 
-    const pecas = listarPecas(usuarioLogado.id) as PecaCadastrada[];
+    const pecas = listarPecasUseCase(usuarioLogado.id) as PecaCadastrada[];
 
     if (!pecas.length) {
       Alert.alert('Atenção', 'Nenhuma peça cadastrada foi encontrada.');
@@ -676,18 +583,18 @@ export default function CompararRoupasScreen() {
       const [resultadoObtido1, resultadoObtido2] = await Promise.all([
         peca1.corDetectadaSalva && resultadoSalvo1.hex
           ? peca1.resultado
-          : analisarImagem(peca1.imagemUri),
+          : analisarImagemUseCase(peca1.imagemUri),
         peca2.corDetectadaSalva && resultadoSalvo2.hex
           ? peca2.resultado
-          : analisarImagem(peca2.imagemUri),
+          : analisarImagemUseCase(peca2.imagemUri),
       ]);
 
       const resultado1 = combinarResultadoComCorSalva(
-        resultadoObtido1 as ResultadoAnalise,
+        resultadoObtido1 as ResultadoAnaliseImagem,
         peca1.corDetectadaSalva,
       );
       const resultado2 = combinarResultadoComCorSalva(
-        resultadoObtido2 as ResultadoAnalise,
+        resultadoObtido2 as ResultadoAnaliseImagem,
         peca2.corDetectadaSalva,
       );
       const cor1 = obterCorPrincipal(resultado1);

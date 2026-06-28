@@ -1,4 +1,5 @@
-export const API_URL = 'http://192.168.15.8:5000';
+export const API_URL =
+  process.env.EXPO_PUBLIC_API_URL || 'http://192.168.15.6:5000';
 
 export async function analisarImagem(imagemUri: string) {
   const respostaImagem = await fetch(imagemUri);
